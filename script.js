@@ -8,6 +8,11 @@ class User {
 		this.focusedNode = node
 		try {
 			this.focusedNode.element.textArea.focus()
+			this.user.focusedNode.element.textArea.scrollIntoView({
+				behavior: 'auto',
+				block: 'center',
+				inline: 'center'
+			})
 		}
 		catch(e) {
 		}
@@ -93,7 +98,7 @@ class HotkeyManager {
 			this.renderer.user.data.load()
 			return
 		}
-		if(e.ctrlKey && isFinite(parseInt(e.key))){
+		if(e.ctrlKey && isFinite(parseInt(e.key))) {
 			e.preventDefault()
 			let travelingNodeIndex = parseInt(e.key) - 2
 			let travelingNode = this.renderer.user.focusedNode.children[travelingNodeIndex] || undefined
@@ -186,6 +191,7 @@ class Data {
 	load() {
 		let uploadInput = document.createElement('input')
 		uploadInput.type = 'file'
+		uploadInput.accept = '.json'
 
 		uploadInput.onchange = e => {
 			let file = e.target.files[0]
@@ -299,6 +305,7 @@ class IdManager {
 let container = document.querySelector('svg g')
 
 let idmanager = new IdManager()
+
 
 let data = new Data([], idmanager)
 let user = new User(data)
