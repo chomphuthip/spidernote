@@ -17,7 +17,23 @@ class User {
 		catch(e) {
 		}
 	}
-	
+
+	createParentNode() {
+		if (this.focusedNode.id == 0) return this.focusedNode
+		let newParentNode = this.data.addNode(window.getSelection().toString(), -1)
+		newParentNode.setParent(this.focusedNode.parent)
+		this.focusedNode.parent.registerChild(newParentNode)
+		this.focusedNode.parent.unregisterChild(this.focusedNode)
+		this.focusedNode.setParent(newParentNode)
+
+		return newParentNode
+	}
+
+	createParentAndFocus() {
+		let newParentNode = this.createParentNode()
+		this.setFocusedNode(newParentNode)
+	}
+
 
 	createChildNode() {
 		let childNode = this.data.addNode(window.getSelection().toString(), -1)
@@ -26,7 +42,7 @@ class User {
 		return childNode
 	}
 
-	createAndFocus() {
+	createChildAndFocus() {
 		let childNode = this.createChildNode()
 		this.setFocusedNode(childNode)
 	}
@@ -70,7 +86,13 @@ class HotkeyManager {
 	manage(e) {
 		if (e.key == 'k' && e.ctrlKey) {
 			e.preventDefault()
-			this.renderer.user.createAndFocus()
+			this.renderer.user.createChildAndFocus()
+			this.renderer.render()
+			return
+		}
+		if (e.key == 'l' && e.ctrlKey) {
+			e.preventDefault()
+			this.renderer.user.createParentAndFocus()
 			this.renderer.render()
 			return
 		}
@@ -256,6 +278,7 @@ class Renderer {
 				textArea.style.height = textArea.scrollHeight + 'px'
 			}
 			let element = document.getElementById('node' + n.id)
+			console.log(element)
 			n.setElement(element)
 			n.element.appendChild(textArea)
 			n.element.textArea = textArea
