@@ -29,7 +29,6 @@ class User {
 
 class Node {
 	constructor(value, id) {
-		console.log(id)
 		this.value = value
 		this.id = id
 		this.parent = null
@@ -79,9 +78,19 @@ class HotkeyManager {
 		}
 		if(e.key == '1' && e.ctrlKey) {
 			e.preventDefault()
-			let parent = this.renderer.user.focusedNode.parent
+			let parent = this.renderer.user.focusedNode.parent || null
 			if (parent !== null)
 				this.renderer.user.setFocusedNode(this.renderer.user.focusedNode.parent)
+			return
+		}
+		if(e.key == 's' && e.ctrlKey) {
+			e.preventDefault()
+			this.renderer.user.data.save()
+			return
+		}
+		if(e.key == 'd' && e.ctrlKey) {
+			e.preventDefault()
+			this.renderer.user.data.load()
 			return
 		}
 		if(e.ctrlKey && isFinite(parseInt(e.key))){
@@ -137,18 +146,20 @@ class Data {
 	}
 
 	stringify() {
-		return JSON.stringify(this.nodes.map(node => {
-			return {id: node.id,
-				children: node.children.map(c => c.id),
-				parent: node.parent == null ? -1 : node.parent.id,
-				value: node.value
+		return JSON.stringify(
+			{data: this.nodes.map(node => {
+				return {id: node.id,
+					children: node.children.map(c => c.id),
+					parent: node.parent == null ? -1 : node.parent.id,
+					value: node.value
+				}})
 			}
-		}))
+		, null, 2)
 	}
 
 	fromString(jsonString) {
 		this.nodes = []
-		let nodeArray = JSON.parse(jsonString)
+		let nodeArray = JSON.parse(jsonString)['data']
 		nodeArray.forEach(flatNode => {
 			this.addNode(flatNode.value, flatNode.id)
 		})
@@ -159,8 +170,34 @@ class Data {
 				node.registerChild(this.getNodeById(childId))
 			})
 		})
+		this.renderer.user.setFocusedNode(this.nodes[0])
 		this.idmanager.nodeId = Math.max(...nodeArray.map(n => n.id))
 		this.renderer.render()
+	}
+
+	save() {
+		let downloadLink = document.createElement('a')
+		let file = new Blob([this.stringify()], {type:'application/json'})
+		downloadLink.href = URL.createObjectURL(file)
+		downloadLink.download = 'notes.json'
+		downloadLink.click()
+	}
+
+	load() {
+		let uploadInput = document.createElement('input')
+		uploadInput.type = 'file'
+
+		uploadInput.onchange = e => {
+			let file = e.target.files[0]
+
+			let reader = new FileReader()
+
+			reader.readAsText(file)
+			reader.onload = e => {
+				this.fromString(e.target.result)
+			}
+		}
+		uploadInput.click()
 	}
 }
 
@@ -174,6 +211,7 @@ class Renderer {
 	render() {
 		this.container.innerHTML = ''
 		let tree = this.calculateTree()
+		this.resizeUsingTree(tree)
 		this.d3.select('svg g')
 			.selectAll('line')
 			.data(tree.links())
@@ -225,36 +263,23 @@ class Renderer {
 	}
 
 	calculateTree() {
-		let descendants = this.d3.tree()(this.d3.hierarchy(this.user.data.nodes[0])).descendants()
-		let maxDepth = Math.max(...descendants.map(d => d.depth))
-		let maxAbscissa = Math.max(...descendants.map(d => d.x))
-
-		let width = (maxAbscissa + 2) * 400
-		let height = maxDepth * 100 + 100
-
-		this.container.parentNode.setAttribute('height', height + 100 + 'px')
-		this.container.parentNode.setAttribute('width',  width + 500 + 'px')
-		
-		return this.d3.tree().size([width + 400, height])(this.d3.hierarchy(this.user.data.nodes[0]))
+		return this.d3.tree().nodeSize([200, 200])(this.d3.hierarchy(this.user.data.nodes[0]))
 	}
 
-	createNodeElement(node, x, y) {
-		let element = document.createElement('div')
-		element.id = node.id
-		element.style.position = 'absolute'
-		element.style.left = x + 'px'
-		element.style.top = y + 'px'
-		element.textArea = document.createElement('textarea')
-		element.textArea.innerHTML = node.value
-		element.appendChild(element.textArea)
-		element.textArea.onchange = e => {
-			node.setValue(element.textArea.value)
-		}
-		element.textArea.onfocus = e => {
-			this.user.focusedNode = node
-		}
-		this.container.appendChild(element)
-		node.setElement(element)
+	resizeUsingTree(tree) {
+		let descendants = tree.descendants()
+
+		let maxDepth = Math.max(...descendants.map(d => d.depth))
+		let height = maxDepth * 200 + 100
+		this.container.parentNode.setAttribute('height', height + 'px')
+
+		let maxAbscissa = Math.max(...descendants.map(d => d.x))
+		let minAbscissa = Math.min(...descendants.map(d => d.x))
+		let width = (maxAbscissa - minAbscissa + 200)*2
+
+		let svgWidth = width > container.parentNode.parentNode.clientWidth ? width : container.parentNode.parentNode.clientWidth
+		this.container.parentNode.setAttribute('width',  svgWidth + 'px')
+		this.container.setAttribute('transform', 'translate(' + svgWidth/2 + ',0)')
 	}
 }
 
@@ -280,6 +305,7 @@ let hotkeymanager = new HotkeyManager(renderer)
 
 data.setRenderer(renderer)
 document.onkeydown = e => hotkeymanager.manage(e)
+window.onresize = e => renderer.render()
 
 container.style['minimum-width'] = '100vh'
 
