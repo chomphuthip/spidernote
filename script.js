@@ -253,6 +253,9 @@ class Renderer {
 			n.setElement(element)
 			n.element.appendChild(textArea)
 			n.element.textArea = textArea
+
+			textArea.style.height = '1px'
+			textArea.style.height = textArea.scrollHeight + 'px'
 		})
 		this.user.focusedNode.element.textArea.focus()
 		this.user.focusedNode.element.textArea.scrollIntoView({
