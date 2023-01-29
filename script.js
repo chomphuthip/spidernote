@@ -300,7 +300,6 @@ let container = document.querySelector('svg g')
 
 let idmanager = new IdManager()
 
-
 let data = new Data([], idmanager)
 let user = new User(data)
 let renderer = new Renderer(user, container, d3)
@@ -309,8 +308,6 @@ let hotkeymanager = new HotkeyManager(renderer)
 data.setRenderer(renderer)
 document.onkeydown = e => hotkeymanager.manage(e)
 window.onresize = e => renderer.render()
-
-container.style['minimum-width'] = '100vh'
 
 renderer.render()
 
