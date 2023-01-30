@@ -8,7 +8,7 @@ class User {
 		this.focusedNode = node
 		try {
 			this.focusedNode.element.textArea.focus()
-			this.user.focusedNode.element.textArea.scrollIntoView({
+			this.focusedNode.element.textArea.scrollIntoView({
 				behavior: 'auto',
 				block: 'center',
 				inline: 'center'
@@ -21,10 +21,15 @@ class User {
 	createParentNode() {
 		if (this.focusedNode.id == 0) return this.focusedNode
 		let newParentNode = this.data.addNode(window.getSelection().toString(), -1)
-		newParentNode.setParent(this.focusedNode.parent)
-		this.focusedNode.parent.registerChild(newParentNode)
-		this.focusedNode.parent.unregisterChild(this.focusedNode)
+		let currentParentNode = this.focusedNode.parent
+
+		newParentNode.setParent(currentParentNode)
+		currentParentNode.registerChild(newParentNode)
+
+		newParentNode.registerChild(this.focusedNode)
 		this.focusedNode.setParent(newParentNode)
+
+		currentParentNode.unregisterChild(this.focusedNode)
 
 		return newParentNode
 	}
@@ -126,7 +131,6 @@ class HotkeyManager {
 			let travelingNode = this.renderer.user.focusedNode.children[travelingNodeIndex] || undefined
 			if (travelingNode !== undefined)
 				this.renderer.user.setFocusedNode(travelingNode)
-				this.renderer.user.focusedNode.element.textArea.focus()
 			return
 		}
 
@@ -198,7 +202,7 @@ class Data {
 			})
 		})
 		this.renderer.user.setFocusedNode(this.nodes[0])
-		this.idmanager.nodeId = Math.max(...nodeArray.map(n => n.id))
+		this.idmanager.nodeId = Math.max(...nodeArray.map(n => n.id)) + 1
 		this.renderer.render()
 	}
 
@@ -278,7 +282,6 @@ class Renderer {
 				textArea.style.height = textArea.scrollHeight + 'px'
 			}
 			let element = document.getElementById('node' + n.id)
-			console.log(element)
 			n.setElement(element)
 			n.element.appendChild(textArea)
 			n.element.textArea = textArea
@@ -287,11 +290,6 @@ class Renderer {
 			textArea.style.height = textArea.scrollHeight + 'px'
 		})
 		this.user.focusedNode.element.textArea.focus()
-		this.user.focusedNode.element.textArea.scrollIntoView({
-			behavior: 'auto',
-			block: 'center',
-			inline: 'center'
-		})
 	}
 
 	calculateTree() {
