@@ -1,7 +1,4 @@
 # spidernote
-A rapid thought composing tool that formats ideas into a tree graph.
-
-spidernote is a thought organizing tool with a focus on speed and structure. Nodes are organized into a tree graph. Trees are saved and loaded from JSON files. Keybinds are set to the home row to assist with quick usage.
 
 Control Scheme:
 ```
